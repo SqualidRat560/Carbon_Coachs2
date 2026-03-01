@@ -8,9 +8,11 @@ from pydantic import BaseModel, field_validator
 from models.enums import TransportMode, FoodType
 from models.entries import TripEntry, FoodEntry
 from engine.calculator import calculate_trip, calculate_food
+from engine.suggestions import generate_suggestions
 from db.queries import (
     insert_trip, insert_food,
     get_daily_total,
+    biggest_transport_today, biggest_food_today,
     get_weekly_summary, get_monthly_summary, get_yearly_summary,
 )
 
@@ -88,8 +90,12 @@ def summary_today(user_id: str):
 
 @router.get("/suggestions")
 def suggestions(user_id: str):
-    # Placeholder — will use real daily data once db/ is wired up
-    return {"user_id": user_id, "tips": []}
+    today = date.today()
+    total = get_daily_total(user_id, today)
+    transport = biggest_transport_today(user_id, today)
+    food = biggest_food_today(user_id, today)
+    tips = generate_suggestions(transport, food, total)
+    return {"user_id": user_id, "tips": tips}
 
 
 @router.get("/summary/week")
